@@ -24,16 +24,15 @@ export function exportDesignJson(state) {
 export function exportResultsCsv(results) {
   if (!results) return;
   const rows = [
-    ["Member", "Material", "Length (m)", "Force (N)", "Stress (Pa)", "FoS", "Mode", "Failed"],
+    ["Member", "Material", "Length (m)", "Area (m^2)", "Force (N)", "Stress (Pa)", "Mode"],
     ...results.memberResults.map((member) => [
       member.label,
       member.materialName,
-      member.length,
+      member.length.toFixed(6),
+      member.area,
       member.force,
       member.stress,
-      member.fos,
-      member.mode,
-      member.failed ? "yes" : "no"
+      member.mode
     ]),
     [],
     ["Node", "Reaction X (N)", "Reaction Y (N)"],
@@ -57,10 +56,9 @@ export async function exportResultsPdf(results) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(`Members analyzed: ${results.memberResults.length}`, 14, 30);
-  doc.text(`Minimum FoS: ${Number.isFinite(results.minFos) ? results.minFos.toFixed(3) : "Infinity"}`, 14, 36);
-  doc.text(`Estimated member mass: ${results.totalMass.toFixed(3)} kg`, 14, 42);
+  doc.text(`Estimated member mass: ${results.totalMass.toFixed(3)} kg`, 14, 36);
 
-  let y = 54;
+  let y = 48;
   doc.setFont("helvetica", "bold");
   doc.text("Members", 14, y);
   y += 7;
@@ -71,7 +69,7 @@ export async function exportResultsPdf(results) {
       y = 18;
     }
     doc.text(
-      `${member.label}: ${member.mode}, F=${member.force.toExponential(3)} N, stress=${member.stress.toExponential(3)} Pa, FoS=${Number.isFinite(member.fos) ? member.fos.toFixed(2) : "Infinity"}`,
+      `${member.label}: ${member.mode}, L=${member.length.toFixed(3)} m, F=${member.force.toExponential(3)} N, stress=${member.stress.toExponential(3)} Pa`,
       14,
       y
     );

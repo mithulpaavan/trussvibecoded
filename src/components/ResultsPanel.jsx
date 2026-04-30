@@ -1,10 +1,9 @@
-import { AlertTriangle, Ruler, Scale3d } from "lucide-react";
+import { Ruler, Scale3d, ShieldCheck } from "lucide-react";
 import { formatEngineering } from "../engine/stiffnessSolver";
 
 export function ResultsPanel({ results, selectedMemberId, selectedNodeId }) {
   const selectedMember = results?.memberResults.find((member) => member.memberId === selectedMemberId);
   const selectedNode = results?.nodeResults.find((node) => node.nodeId === selectedNodeId);
-  const failedCount = results?.memberResults.filter((member) => member.failed).length ?? 0;
 
   return (
     <section className="bg-white">
@@ -15,7 +14,7 @@ export function ResultsPanel({ results, selectedMemberId, selectedNodeId }) {
         ) : (
           <div className="mt-3 grid grid-cols-3 gap-2">
             <Metric icon={Ruler} label="Members" value={String(results.memberResults.length)} />
-            <Metric icon={AlertTriangle} label="Min FoS" value={Number.isFinite(results.minFos) ? results.minFos.toFixed(2) : "Infinity"} danger={results.minFos < 1} />
+            <Metric icon={ShieldCheck} label="Status" value={results.memberResults.some((member) => member.failed) ? "Check" : "OK"} danger={results.memberResults.some((member) => member.failed)} />
             <Metric icon={Scale3d} label="Mass" value={formatEngineering(results.totalMass, "kg")} />
           </div>
         )}
@@ -23,18 +22,12 @@ export function ResultsPanel({ results, selectedMemberId, selectedNodeId }) {
 
       {results ? (
         <div className="p-4">
-          {failedCount ? (
-            <div className="mb-4 rounded border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-700">
-              {failedCount} member{failedCount === 1 ? "" : "s"} below required factor of safety.
-            </div>
-          ) : null}
-
           {selectedMember ? (
             <SelectedCard title={`Selected ${selectedMember.label}`}>
               <ResultRow label="Mode" value={selectedMember.mode} tone={selectedMember.mode === "zero force member" ? "success" : undefined} />
               <ResultRow label="Force" value={formatEngineering(selectedMember.force, "N")} />
               <ResultRow label="Stress" value={formatEngineering(selectedMember.stress, "Pa")} />
-              <ResultRow label="FoS" value={Number.isFinite(selectedMember.fos) ? selectedMember.fos.toFixed(3) : "Infinity"} danger={selectedMember.failed} />
+              <ResultRow label="Length" value={formatMeters(selectedMember.length)} />
             </SelectedCard>
           ) : null}
 
@@ -56,8 +49,8 @@ export function ResultsPanel({ results, selectedMemberId, selectedNodeId }) {
                 <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
                   <ResultRow label="F" value={formatEngineering(member.force, "N")} />
                   <ResultRow label="stress" value={formatEngineering(member.stress, "Pa")} />
-                  <ResultRow label="FoS" value={Number.isFinite(member.fos) ? member.fos.toFixed(2) : "Infinity"} danger={member.failed} />
-                  <ResultRow label="L" value={formatEngineering(member.length, "m")} />
+                  <ResultRow label="L" value={formatMeters(member.length)} />
+                  <ResultRow label="Area" value={`${member.area.toPrecision(3)} m^2`} />
                 </div>
               </div>
             ))}
@@ -101,6 +94,10 @@ function modeClass(mode) {
   if (mode === "zero force member") return "text-green-600";
   if (mode === "tension") return "text-rose-600";
   return "text-blue-600";
+}
+
+function formatMeters(value) {
+  return `${Number(value).toFixed(3)} m`;
 }
 
 function ResultRow({ label, value, danger, tone }) {
